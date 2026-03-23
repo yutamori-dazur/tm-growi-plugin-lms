@@ -1,34 +1,31 @@
 /**
  * growi-plugin-lms — クライアントエントリーポイント。
  *
- * ページ内のコードブロックマーカーを検知してLMSコンポーネントを注入する。
+ * growiFacade.markdownRenderer を使い、特定言語のコードブロックを
+ * LMSコンポーネントに差し替える。
  *
- * マーカー一覧:
- *   ```lms:lesson-complete    → LessonCompleteButton（完了ボタン）
- *   ```lms:progress           → ProgressIndicator（進捗バー）
- *   ```yaml:quiz              → QuizRenderer（クイズUI）
- *
- * コードブロックの中身にcourseIdを記述する:
- *   ```lms:lesson-complete
- *   courseId: intro
- *   ```
+ * マーカー:
+ *   ```lms:lesson-complete   → LessonCompleteButton
+ *   ```lms:progress          → ProgressIndicator
+ *   ```yaml:quiz             → QuizRenderer
  */
 
-import { createRoot } from 'react-dom/client';
-import { getCurrentUserId } from './src/api';
+import React from 'react';
+
+import config from './package.json';
 import { LessonCompleteButton } from './src/LessonCompleteButton';
 import { ProgressIndicator } from './src/ProgressIndicator';
 import { QuizRenderer } from './src/QuizRenderer';
 import { parseQuizYaml } from './src/yamlParser';
 
-/** マウント済みのReactルートを追跡する */
-const mountedRoots: Array<{ container: Element; root: ReturnType<typeof createRoot> }> = [];
+declare const growiFacade: any;
 
 /**
- * コードブロックのテキストからキーバリューを抽出する。
- * 例: "courseId: intro\n" → { courseId: "intro" }
+ * コードブロックの子要素（文字列）からキーバリューを抽出する。
+ * 例: "courseId: intro" → { courseId: "intro" }
  */
-function parseBlockContent(text: string): Record<string, string> {
+function parseProps(children: any): Record<string, string> {
+  const text = typeof children === 'string' ? children : String(children ?? '');
   const result: Record<string, string> = {};
   for (const line of text.split('\n')) {
     const match = line.match(/^\s*(\w+)\s*:\s*(.+?)\s*$/);
@@ -40,190 +37,128 @@ function parseBlockContent(text: string): Record<string, string> {
 }
 
 /**
- * 指定の言語ラベルを持つコードブロック要素を全て検索する。
- * Growi v7 は <code class="language-{lang}"> でレンダリングする。
+ * 現在ログイン中のユーザーIDを取得する。
+ * Growi の window 上のユーザー情報から取得を試みる。
  */
-function findCodeBlocks(wikiBody: Element, lang: string): Element[] {
-  // class="language-lms:lesson-complete" 等
-  const byClass = Array.from(wikiBody.querySelectorAll(`code[class*="language-${lang}"]`));
-  // フォールバック: data-lang 属性
-  const byData = Array.from(wikiBody.querySelectorAll(`[data-lang="${lang}"]`));
-  // 重複除去
-  const seen = new Set<Element>();
-  return [...byClass, ...byData].filter((el) => {
-    if (seen.has(el)) return false;
-    seen.add(el);
-    return true;
-  });
-}
-
-/**
- * コードブロックを非表示にし、直後にReactコンポーネントをマウントするコンテナを挿入する。
- */
-function replaceCodeBlock(codeEl: Element): HTMLDivElement | null {
-  const preEl = codeEl.closest('pre') ?? codeEl.parentElement;
-  if (!preEl) return null;
-
-  (preEl as HTMLElement).style.display = 'none';
-
-  const container = document.createElement('div');
-  container.setAttribute('data-lms-plugin', 'true');
-  preEl.parentNode?.insertBefore(container, preEl.nextSibling);
-
-  return container;
-}
-
-/**
- * Reactコンポーネントをマウントし、追跡リストに登録する。
- */
-function mount(container: HTMLDivElement, component: React.ReactNode): void {
-  const root = createRoot(container);
-  root.render(component);
-  mountedRoots.push({ container, root });
-}
-
-/**
- * 前回マウントした全コンポーネントをアンマウントする。
- */
-function unmountAll(): void {
-  for (const { container, root } of mountedRoots) {
-    root.unmount();
-    container.remove();
-  }
-  mountedRoots.length = 0;
-}
-
-/**
- * ページ内のLMSマーカーを検索し、対応するコンポーネントを注入する。
- */
-function scanAndMount(userId: string): void {
-  const wikiBody = document.querySelector('.wiki-body-content');
-  if (!wikiBody) return;
-
-  unmountAll();
-
-  const pagePath = window.location.pathname;
-
-  // 1. lms:lesson-complete マーカー → 完了ボタン
-  for (const el of findCodeBlocks(wikiBody, 'lms:lesson-complete')) {
-    const props = parseBlockContent(el.textContent ?? '');
-    if (!props.courseId) continue;
-
-    const container = replaceCodeBlock(el);
-    if (!container) continue;
-
-    mount(
-      container,
-      <LessonCompleteButton courseId={props.courseId} pagePath={pagePath} userId={userId} />,
-    );
-  }
-
-  // 2. lms:progress マーカー → 進捗バー
-  for (const el of findCodeBlocks(wikiBody, 'lms:progress')) {
-    const props = parseBlockContent(el.textContent ?? '');
-    if (!props.courseId) continue;
-
-    const container = replaceCodeBlock(el);
-    if (!container) continue;
-
-    mount(container, <ProgressIndicator courseId={props.courseId} userId={userId} />);
-  }
-
-  // 3. yaml:quiz マーカー → クイズUI
-  for (const el of findCodeBlocks(wikiBody, 'yaml:quiz')) {
-    const yamlText = el.textContent ?? '';
-    // courseIdはquizマーカーのYAML内には書かないので、同じページ内のlesson-completeから取得するか、
-    // ページ内の他のlmsマーカーから推定する。フォールバック: URLパスから推定
-    const courseId = inferCourseId(wikiBody) ?? 'unknown';
-    const quizData = parseQuizYaml(yamlText, courseId);
-
-    if (!quizData) {
-      console.warn('[growi-plugin-lms] yaml:quiz のパースに失敗しました');
-      continue;
+function getUserId(): string | null {
+  try {
+    // Growi v7 では window 上にユーザー情報がある場合がある
+    const appContainer = document.getElementById('growi');
+    if (appContainer) {
+      const dataset = appContainer.dataset;
+      if (dataset.currentUserId) return dataset.currentUserId;
     }
-
-    const container = replaceCodeBlock(el);
-    if (!container) continue;
-
-    mount(container, <QuizRenderer quizData={quizData} />);
-  }
-}
-
-/**
- * ページ内の他のLMSマーカーからcourseIdを推定する。
- * 見つからない場合はURLパスから推定を試みる。
- */
-function inferCourseId(wikiBody: Element): string | null {
-  // 同一ページ内の lms:lesson-complete や lms:progress から取得
-  for (const lang of ['lms:lesson-complete', 'lms:progress']) {
-    for (const el of findCodeBlocks(wikiBody, lang)) {
-      const props = parseBlockContent(el.textContent ?? '');
-      if (props.courseId) return props.courseId;
-    }
+    // body の data 属性からも試みる
+    const body = document.body;
+    if (body.dataset.currentUserId) return body.dataset.currentUserId;
+  } catch {
+    // 無視
   }
   return null;
 }
 
-// ---- ページ遷移監視 ----
-
-function watchPageChanges(userId: string): void {
-  let lastPath = window.location.pathname;
-
-  function onNavigate() {
-    const currentPath = window.location.pathname;
-    if (currentPath !== lastPath) {
-      lastPath = currentPath;
-      setTimeout(() => scanAndMount(userId), 500);
-    }
-  }
-
-  const originalPushState = history.pushState.bind(history);
-  const originalReplaceState = history.replaceState.bind(history);
-
-  history.pushState = (...args) => { originalPushState(...args); onNavigate(); };
-  history.replaceState = (...args) => { originalReplaceState(...args); onNavigate(); };
-  window.addEventListener('popstate', onNavigate);
-
-  // MutationObserverでGrowiの非同期レンダリング完了を検知
-  const observer = new MutationObserver(() => {
-    // マーカーが存在するのにマウント済みコンポーネントがない場合のみ再スキャン
-    const wikiBody = document.querySelector('.wiki-body-content');
-    if (!wikiBody) return;
-
-    const hasMarkers =
-      wikiBody.querySelector('code[class*="language-lms:"]') !== null ||
-      wikiBody.querySelector('[data-lang^="lms:"]') !== null ||
-      wikiBody.querySelector('code[class*="language-yaml:quiz"]') !== null;
-
-    const hasMounts = wikiBody.querySelector('[data-lms-plugin]') !== null;
-
-    if (hasMarkers && !hasMounts) {
-      scanAndMount(userId);
-    }
-  });
-
-  observer.observe(document.body, { childList: true, subtree: true });
+/**
+ * 現在のページパスを取得する。
+ */
+function getPagePath(): string {
+  return decodeURIComponent(window.location.pathname);
 }
 
-// ---- エントリーポイント ----
+/**
+ * 元のCodeコンポーネントをラップし、LMS用の言語指定のコードブロックを
+ * LMSコンポーネントに差し替える高階コンポーネント。
+ */
+function withLmsComponents(OriginalCode: React.ComponentType<any>) {
+  return function LmsCodeWrapper(props: any) {
+    const { className, children, ...rest } = props;
+    const lang = (className ?? '').replace('language-', '');
 
-const activate = (): void => {
-  console.log('[growi-plugin-lms] activate called');
+    // lms:lesson-complete → 完了ボタン
+    if (lang === 'lms:lesson-complete') {
+      const parsed = parseProps(children);
+      const courseId = parsed.courseId;
+      if (!courseId) return null;
 
-  getCurrentUserId()
-    .then((userId) => {
-      if (!userId) {
-        console.warn('[growi-plugin-lms] userId not found, plugin disabled');
-        return;
+      const userId = getUserId();
+      if (!userId) return React.createElement('div', { style: { color: '#999' } }, 'ログインが必要です');
+
+      const pagePath = getPagePath();
+      return React.createElement(LessonCompleteButton, { courseId, pagePath, userId });
+    }
+
+    // lms:progress → 進捗バー
+    if (lang === 'lms:progress') {
+      const parsed = parseProps(children);
+      const courseId = parsed.courseId;
+      if (!courseId) return null;
+
+      const userId = getUserId();
+      if (!userId) return React.createElement('div', { style: { color: '#999' } }, 'ログインが必要です');
+
+      return React.createElement(ProgressIndicator, { courseId, userId });
+    }
+
+    // yaml:quiz → クイズUI
+    if (lang === 'yaml:quiz') {
+      const yamlText = typeof children === 'string' ? children : String(children ?? '');
+      // courseId を同ページの他のLMSマーカーから推定するのは困難なので、
+      // YAMLパーサーにフォールバック用courseIdを渡す
+      const quizData = parseQuizYaml(yamlText, 'unknown');
+      if (!quizData) {
+        console.warn('[growi-plugin-lms] yaml:quiz のパースに失敗しました');
+        return React.createElement(OriginalCode, props);
       }
 
-      console.log('[growi-plugin-lms] userId:', userId);
-      scanAndMount(userId);
-      watchPageChanges(userId);
-    })
-    .catch((err) => {
-      console.warn('[growi-plugin-lms] activate failed:', err);
-    });
+      return React.createElement(QuizRenderer, { quizData });
+    }
+
+    // その他のコードブロックは元のコンポーネントで表示
+    return React.createElement(OriginalCode, props);
+  };
+}
+
+const activate = (): void => {
+  if (growiFacade == null || growiFacade.markdownRenderer == null) {
+    return;
+  }
+
+  const { optionsGenerators } = growiFacade.markdownRenderer;
+
+  // ビュー用レンダラーをカスタマイズ
+  const originalCustomViewOptions = optionsGenerators.customGenerateViewOptions;
+  optionsGenerators.customGenerateViewOptions = (...args: any[]) => {
+    const options = originalCustomViewOptions
+      ? originalCustomViewOptions(...args)
+      : optionsGenerators.generateViewOptions(...args);
+
+    const OriginalCode = options.components.code;
+    options.components.code = withLmsComponents(OriginalCode);
+
+    return options;
+  };
+
+  // プレビュー用レンダラーもカスタマイズ
+  const originalCustomPreviewOptions = optionsGenerators.customGeneratePreviewOptions;
+  optionsGenerators.customGeneratePreviewOptions = (...args: any[]) => {
+    const options = originalCustomPreviewOptions
+      ? originalCustomPreviewOptions(...args)
+      : optionsGenerators.generatePreviewOptions(...args);
+
+    const OriginalCode = options.components.code;
+    options.components.code = withLmsComponents(OriginalCode);
+
+    return options;
+  };
 };
 
-export default { activate };
+const deactivate = (): void => {
+};
+
+// Growi プラグインシステムへの登録
+if ((window as any).pluginActivators == null) {
+  (window as any).pluginActivators = {};
+}
+(window as any).pluginActivators[config.name] = {
+  activate,
+  deactivate,
+};
