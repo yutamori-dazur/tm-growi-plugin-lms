@@ -36,25 +36,22 @@ function parseProps(children: any): Record<string, string> {
   return result;
 }
 
+/** activate() で取得したユーザーIDを保持する */
+let currentUserId: string | null = null;
+
 /**
- * 現在ログイン中のユーザーIDを取得する。
- * Growi の window 上のユーザー情報から取得を試みる。
+ * LMS API の /auth/me を呼んでユーザーIDを取得する。
+ * Growiと同一ドメインなので connect.sid Cookie が自動送信される。
  */
-function getUserId(): string | null {
+async function fetchUserId(): Promise<string | null> {
   try {
-    // Growi v7 では window 上にユーザー情報がある場合がある
-    const appContainer = document.getElementById('growi');
-    if (appContainer) {
-      const dataset = appContainer.dataset;
-      if (dataset.currentUserId) return dataset.currentUserId;
-    }
-    // body の data 属性からも試みる
-    const body = document.body;
-    if (body.dataset.currentUserId) return body.dataset.currentUserId;
+    const res = await fetch('/api/lms/auth/me', { credentials: 'include' });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.userId ?? null;
   } catch {
-    // 無視
+    return null;
   }
-  return null;
 }
 
 /**
@@ -79,11 +76,10 @@ function withLmsComponents(OriginalCode: React.ComponentType<any>) {
       const courseId = parsed.courseId;
       if (!courseId) return null;
 
-      const userId = getUserId();
-      if (!userId) return React.createElement('div', { style: { color: '#999' } }, 'ログインが必要です');
+      if (!currentUserId) return React.createElement('div', { style: { color: '#999' } }, 'ログインが必要です');
 
       const pagePath = getPagePath();
-      return React.createElement(LessonCompleteButton, { courseId, pagePath, userId });
+      return React.createElement(LessonCompleteButton, { courseId, pagePath, userId: currentUserId });
     }
 
     // lms:progress → 進捗バー
@@ -92,10 +88,9 @@ function withLmsComponents(OriginalCode: React.ComponentType<any>) {
       const courseId = parsed.courseId;
       if (!courseId) return null;
 
-      const userId = getUserId();
-      if (!userId) return React.createElement('div', { style: { color: '#999' } }, 'ログインが必要です');
+      if (!currentUserId) return React.createElement('div', { style: { color: '#999' } }, 'ログインが必要です');
 
-      return React.createElement(ProgressIndicator, { courseId, userId });
+      return React.createElement(ProgressIndicator, { courseId, userId: currentUserId });
     }
 
     // yaml:quiz → クイズUI
@@ -121,6 +116,11 @@ const activate = (): void => {
   if (growiFacade == null || growiFacade.markdownRenderer == null) {
     return;
   }
+
+  // ユーザーIDを非同期で取得（コンポーネント初回レンダリング時にはnullの可能性あり）
+  fetchUserId().then((id) => {
+    currentUserId = id;
+  });
 
   const { optionsGenerators } = growiFacade.markdownRenderer;
 
