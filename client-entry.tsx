@@ -189,6 +189,19 @@ const activate = (): void => {
     mountLmsComponents();
   });
   observer.observe(document.body, { childList: true, subtree: true });
+
+  // SPA戻る/進むでGrowiがキャッシュDOMを復元したとき、
+  // data-lms-mounted が付いたままだがReact rootが失われている。
+  // popstate で全マウントをリセットして再マウントする。
+  window.addEventListener('popstate', () => {
+    setTimeout(() => {
+      // 既存のマウント済みマークをクリアして再スキャン
+      document.querySelectorAll('[data-lms-mounted]').forEach((el) => {
+        el.removeAttribute('data-lms-mounted');
+      });
+      mountLmsComponents();
+    }, 500);
+  });
 };
 
 const deactivate = (): void => {
