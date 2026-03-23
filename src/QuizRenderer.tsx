@@ -17,6 +17,29 @@ interface QuizRendererProps {
 
 type QuizPhase = 'answering' | 'submitting' | 'result' | 'error';
 
+// カラーパレット定数（復職名人Webサイトに合わせる）
+const COLOR = {
+  mainGreen: '#1a661e',
+  mainGreenDark: '#145218',
+  mainGreenLight: 'rgba(33, 128, 38, 0.05)',
+  mainGreenText: '#1a661e',
+  gray: '#6b7280',
+  grayDisabled: '#9ca3af',
+  text: '#333',
+  textMuted: '#888',
+  border: 'hsla(0,0%,78%,.5)',
+  white: '#fff',
+  bg: '#faf5f0',
+  accentRed: '#e44141',
+  accentRedBg: '#fff2f0',
+  accentRedBorder: 'rgba(228, 65, 65, 0.4)',
+  accentBlue: '#3d79d5',
+  accentBlueBg: '#f3f8fd',
+  passedBannerBg: '#1a661e',
+  correctText: '#1a661e',
+  fontFamily: '"Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif',
+};
+
 // ---- モジュールレベルの静的スタイル定数 ----
 // レンダリングのたびに新しいオブジェクトが生成されないようにモジュールスコープで定義する。
 
@@ -25,26 +48,33 @@ const S = {
     marginTop: '2rem',
     marginBottom: '2rem',
     padding: '1.5rem',
-    borderTop: '1px solid rgba(255, 255, 255, 0.12)',
-    fontFamily: 'inherit',
+    borderTop: `1px solid ${COLOR.border}`,
+    fontFamily: COLOR.fontFamily,
+    color: COLOR.text,
+    maxWidth: '100%',
+    overflow: 'hidden',
+    boxSizing: 'border-box' as const,
   },
   title: {
     fontSize: '1.25rem',
     fontWeight: 700,
     marginBottom: '1.5rem',
-    color: 'inherit',
+    color: COLOR.text,
   },
   questionBlock: {
     marginBottom: '1.75rem',
     padding: '1rem 1.25rem',
-    border: '1px solid rgba(255, 255, 255, 0.15)',
+    border: `1px solid ${COLOR.border}`,
     borderRadius: '8px',
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    backgroundColor: COLOR.white,
+    maxWidth: '100%',
+    overflow: 'hidden',
+    boxSizing: 'border-box' as const,
   },
   questionLabel: {
     fontSize: '0.75rem',
     fontWeight: 600,
-    color: '#6b7280',
+    color: COLOR.mainGreen,
     marginBottom: '0.4rem',
     textTransform: 'uppercase' as const,
     letterSpacing: '0.05em',
@@ -54,23 +84,34 @@ const S = {
     fontWeight: 500,
     marginBottom: '0.75rem',
     lineHeight: 1.6,
-    color: 'inherit',
+    color: COLOR.text,
+    // 折り返し設定: 長い問題文がはみ出さないよう強制折り返しする
+    wordWrap: 'break-word' as const,
+    overflowWrap: 'break-word' as const,
+    whiteSpace: 'normal' as const,
+    maxWidth: '100%',
   },
   multipleNote: {
     fontSize: '0.75rem',
-    color: '#9ca3af',
+    color: COLOR.textMuted,
     marginBottom: '0.5rem',
   },
   optionLabel: {
     display: 'flex',
     alignItems: 'flex-start',
     gap: '0.5rem',
-    padding: '0.4rem 0',
+    padding: '0.5rem 0.6rem',
     cursor: 'pointer',
     lineHeight: 1.5,
     fontSize: '0.95rem',
+    borderRadius: '4px',
+    transition: 'background-color 0.15s ease',
+    // 選択肢テキストも折り返しを保証する
+    wordWrap: 'break-word' as const,
+    overflowWrap: 'break-word' as const,
+    whiteSpace: 'normal' as const,
   },
-  inputControl: { marginTop: '2px', flexShrink: 0 },
+  inputControl: { marginTop: '3px', flexShrink: 0 },
   centerRow: { display: 'flex', justifyContent: 'center' },
   submitButtonBase: {
     display: 'inline-flex',
@@ -81,9 +122,10 @@ const S = {
     fontWeight: 600,
     borderRadius: '6px',
     border: 'none',
-    color: '#ffffff',
+    color: COLOR.white,
     transition: 'background-color 0.2s ease',
     marginTop: '0.5rem',
+    fontFamily: COLOR.fontFamily,
   },
   submittingButton: {
     display: 'inline-flex',
@@ -94,19 +136,19 @@ const S = {
     fontWeight: 600,
     borderRadius: '6px',
     border: 'none',
-    color: '#ffffff',
+    color: COLOR.white,
     transition: 'background-color 0.2s ease',
     marginTop: '0.5rem',
     cursor: 'not-allowed' as const,
-    backgroundColor: '#6b7280',
+    backgroundColor: COLOR.gray,
     opacity: 0.7,
+    fontFamily: COLOR.fontFamily,
   },
   passedBanner: {
     padding: '1rem 1.25rem',
     borderRadius: '8px',
-    backgroundColor: 'rgba(34, 197, 94, 0.15)',
-    border: '1px solid rgba(34, 197, 94, 0.4)',
-    color: '#4ade80',
+    backgroundColor: COLOR.passedBannerBg,
+    color: COLOR.white,
     fontWeight: 700,
     fontSize: '1.125rem',
     marginBottom: '1.5rem',
@@ -115,9 +157,9 @@ const S = {
   failedBanner: {
     padding: '1rem 1.25rem',
     borderRadius: '8px',
-    backgroundColor: 'rgba(249, 115, 22, 0.15)',
-    border: '1px solid rgba(249, 115, 22, 0.4)',
-    color: '#fb923c',
+    backgroundColor: COLOR.accentRedBg,
+    border: `1px solid ${COLOR.accentRedBorder}`,
+    color: COLOR.accentRed,
     fontWeight: 700,
     fontSize: '1.125rem',
     marginBottom: '1.5rem',
@@ -131,45 +173,52 @@ const S = {
     fontSize: '0.95rem',
     fontWeight: 600,
     borderRadius: '6px',
-    border: '1px solid #f97316',
+    border: `1px solid ${COLOR.accentRed}`,
     cursor: 'pointer',
     backgroundColor: 'transparent',
-    color: '#f97316',
+    color: COLOR.accentRed,
     transition: 'background-color 0.2s ease',
     marginTop: '1rem',
+    fontFamily: COLOR.fontFamily,
   },
   error: {
     marginTop: '1rem',
     padding: '0.75rem 1rem',
     borderRadius: '6px',
-    backgroundColor: 'rgba(239, 68, 68, 0.1)',
-    border: '1px solid rgba(239, 68, 68, 0.3)',
-    color: '#f87171',
+    backgroundColor: COLOR.accentRedBg,
+    border: `1px solid ${COLOR.accentRedBorder}`,
+    color: COLOR.accentRed,
     fontSize: '0.875rem',
   },
   answerDetail: {
     fontSize: '0.875rem',
     lineHeight: 1.6,
     marginTop: '0.35rem',
-    color: 'inherit',
-    opacity: 0.85,
+    color: COLOR.text,
+    // 回答テキストも折り返しを保証する
+    wordWrap: 'break-word' as const,
+    overflowWrap: 'break-word' as const,
   },
   correctAnswerText: {
     fontSize: '0.875rem',
     lineHeight: 1.6,
     marginTop: '0.25rem',
-    color: '#4ade80', // green-400 — 正解を視覚的に強調する
+    color: COLOR.correctText,
+    fontWeight: 600,
+    wordWrap: 'break-word' as const,
+    overflowWrap: 'break-word' as const,
   },
   explanationBox: {
     marginTop: '0.75rem',
     padding: '0.6rem 0.85rem',
     borderRadius: '6px',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderLeft: '3px solid rgba(156, 163, 175, 0.5)',
+    backgroundColor: COLOR.accentBlueBg,
+    borderLeft: `3px solid ${COLOR.accentBlue}`,
     fontSize: '0.875rem',
     lineHeight: 1.6,
-    color: 'inherit',
-    opacity: 0.9,
+    color: COLOR.text,
+    wordWrap: 'break-word' as const,
+    overflowWrap: 'break-word' as const,
   },
 } satisfies Record<string, React.CSSProperties>;
 
@@ -243,7 +292,7 @@ export function QuizRenderer({ quizData }: QuizRendererProps) {
   const submitButtonStyle: React.CSSProperties = {
     ...S.submitButtonBase,
     cursor: allAnswered ? 'pointer' : 'not-allowed',
-    backgroundColor: allAnswered ? '#3b82f6' : '#4b5563',
+    backgroundColor: allAnswered ? COLOR.mainGreen : COLOR.gray,
     opacity: allAnswered ? 1 : 0.6,
   };
 
@@ -268,15 +317,22 @@ export function QuizRenderer({ quizData }: QuizRendererProps) {
             <div>
               {q.options.map((option, oIdx) => {
                 const currentSel = selections.get(qIdx) ?? [];
+                const isSelected = currentSel.includes(oIdx);
 
                 if (q.type === 'single') {
                   return (
-                    <label key={oIdx} style={S.optionLabel}>
+                    <label
+                      key={oIdx}
+                      style={{
+                        ...S.optionLabel,
+                        backgroundColor: isSelected ? COLOR.mainGreenLight : 'transparent',
+                      }}
+                    >
                       <input
                         type="radio"
                         name={`q${qIdx}`}
                         value={oIdx}
-                        checked={currentSel.includes(oIdx)}
+                        checked={isSelected}
                         onChange={() => !isSubmitting && handleSingleChange(qIdx, oIdx)}
                         disabled={isSubmitting}
                         style={S.inputControl}
@@ -286,11 +342,17 @@ export function QuizRenderer({ quizData }: QuizRendererProps) {
                   );
                 } else {
                   return (
-                    <label key={oIdx} style={S.optionLabel}>
+                    <label
+                      key={oIdx}
+                      style={{
+                        ...S.optionLabel,
+                        backgroundColor: isSelected ? COLOR.mainGreenLight : 'transparent',
+                      }}
+                    >
                       <input
                         type="checkbox"
                         value={oIdx}
-                        checked={currentSel.includes(oIdx)}
+                        checked={isSelected}
                         onChange={(e) =>
                           !isSubmitting && handleMultipleChange(qIdx, oIdx, e.target.checked)
                         }
@@ -319,12 +381,12 @@ export function QuizRenderer({ quizData }: QuizRendererProps) {
               onClick={handleSubmit}
               onMouseEnter={(e) => {
                 if (allAnswered) {
-                  (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#2563eb';
+                  (e.currentTarget as HTMLButtonElement).style.backgroundColor = COLOR.mainGreenDark;
                 }
               }}
               onMouseLeave={(e) => {
                 if (allAnswered) {
-                  (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#3b82f6';
+                  (e.currentTarget as HTMLButtonElement).style.backgroundColor = COLOR.mainGreen;
                 }
               }}
             >
@@ -348,8 +410,7 @@ export function QuizRenderer({ quizData }: QuizRendererProps) {
             style={S.retryButton}
             onClick={handleRetry}
             onMouseEnter={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.backgroundColor =
-                'rgba(249, 115, 22, 0.1)';
+              (e.currentTarget as HTMLButtonElement).style.backgroundColor = COLOR.accentRedBg;
             }}
             onMouseLeave={(e) => {
               (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'transparent';
@@ -406,8 +467,8 @@ export function QuizRenderer({ quizData }: QuizRendererProps) {
         // isCorrect に依存するため render 内で算出する
         const feedbackBlockStyle: React.CSSProperties = {
           ...S.questionBlock,
-          borderColor: isCorrect ? 'rgba(34, 197, 94, 0.4)' : 'rgba(239, 68, 68, 0.4)',
-          backgroundColor: isCorrect ? 'rgba(34, 197, 94, 0.06)' : 'rgba(239, 68, 68, 0.06)',
+          borderColor: isCorrect ? 'rgba(26, 102, 30, 0.4)' : COLOR.accentRedBorder,
+          backgroundColor: isCorrect ? 'rgba(26, 102, 30, 0.04)' : COLOR.accentRedBg,
         };
         const indicatorStyle: React.CSSProperties = {
           display: 'inline-flex',
@@ -415,7 +476,7 @@ export function QuizRenderer({ quizData }: QuizRendererProps) {
           gap: '0.3rem',
           fontSize: '0.875rem',
           fontWeight: 600,
-          color: isCorrect ? '#4ade80' : '#f87171',
+          color: isCorrect ? COLOR.mainGreenText : COLOR.accentRed,
           marginBottom: '0.4rem',
         };
 
@@ -452,8 +513,7 @@ export function QuizRenderer({ quizData }: QuizRendererProps) {
             style={S.retryButton}
             onClick={handleRetry}
             onMouseEnter={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.backgroundColor =
-                'rgba(249, 115, 22, 0.1)';
+              (e.currentTarget as HTMLButtonElement).style.backgroundColor = COLOR.accentRedBg;
             }}
             onMouseLeave={(e) => {
               (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'transparent';

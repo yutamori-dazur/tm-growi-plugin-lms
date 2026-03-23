@@ -21,6 +21,26 @@ interface FlatRow {
   completed: boolean;
 }
 
+// カラーパレット定数（復職名人Webサイトに合わせる）
+const COLOR = {
+  mainGreen: '#1a661e',
+  mainGreenDark: '#145218',
+  mainGreenLight: 'rgba(33, 128, 38, 0.05)',
+  accentRed: '#e44141',
+  accentYellow: '#d97706',
+  text: '#333',
+  textMuted: '#888',
+  textSubtle: '#666',
+  border: 'hsla(0,0%,78%,.5)',
+  white: '#fff',
+  bg: '#faf5f0',
+  barBg: '#e0e0e0',
+  tableBg: '#fff',
+  tableHeaderBg: '#faf5f0',
+  sortActiveColor: '#1a661e',
+  fontFamily: '"Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif',
+};
+
 export function AdminDashboard() {
   const [data, setData] = useState<AdminOverviewResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -161,6 +181,14 @@ export function AdminDashboard() {
           }}
           onClick={() => handleDownloadCsv()}
           disabled={downloadingCsv === '__all__'}
+          onMouseEnter={(e) => {
+            if (downloadingCsv !== '__all__') {
+              (e.currentTarget as HTMLButtonElement).style.backgroundColor = COLOR.mainGreenDark;
+            }
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLButtonElement).style.backgroundColor = COLOR.mainGreen;
+          }}
         >
           {downloadingCsv === '__all__' ? 'ダウンロード中...' : '全体 CSV ダウンロード'}
         </button>
@@ -200,7 +228,7 @@ export function AdminDashboard() {
           <tbody>
             {sortedRows.length === 0 ? (
               <tr>
-                <td colSpan={5} style={{ ...S.td, color: '#888', textAlign: 'center' }}>
+                <td colSpan={5} style={{ ...S.td, color: COLOR.textMuted, textAlign: 'center' }}>
                   データがありません
                 </td>
               </tr>
@@ -227,7 +255,7 @@ function CourseSummaryCard({
 }) {
   const rate = Math.round(course.completionRate);
   // 修了率に応じてカードのアクセントカラーを変える（緑>60%, 黄>30%, 赤<=30%）
-  const accentColor = rate > 60 ? '#22c55e' : rate > 30 ? '#eab308' : '#ef4444';
+  const accentColor = rate > 60 ? COLOR.mainGreen : rate > 30 ? COLOR.accentYellow : COLOR.accentRed;
 
   return (
     <div style={{ ...S.summaryCard, borderTopColor: accentColor }}>
@@ -283,8 +311,19 @@ function SortableHeader({
   const arrow = isActive ? (dir === 'asc' ? ' ▲' : ' ▼') : ' ↕';
   return (
     <th
-      style={{ ...S.th, cursor: 'pointer', userSelect: 'none', color: isActive ? '#60a5fa' : '#ccc' }}
+      style={{
+        ...S.th,
+        cursor: 'pointer',
+        userSelect: 'none',
+        color: isActive ? COLOR.sortActiveColor : COLOR.text,
+      }}
       onClick={() => onClick(sortKey)}
+      onMouseEnter={(e) => {
+        (e.currentTarget as HTMLTableCellElement).style.color = COLOR.sortActiveColor;
+      }}
+      onMouseLeave={(e) => {
+        (e.currentTarget as HTMLTableCellElement).style.color = isActive ? COLOR.sortActiveColor : COLOR.text;
+      }}
       // キーボード操作のためのa11y属性
       role="button"
       tabIndex={0}
@@ -299,24 +338,23 @@ function SortableHeader({
 
 function ProgressRow({ row }: { row: FlatRow }) {
   const percent = Math.round(row.progressPercent);
-  const barColor = percent >= 100 ? '#22c55e' : '#3b82f6';
 
   return (
     <tr style={S.tr}>
       <td style={S.td}>
-        <div style={{ fontWeight: 'bold', color: '#e0e0e0' }}>{row.name || row.username}</div>
-        <div style={{ fontSize: '11px', color: '#888' }}>{row.username}</div>
+        <div style={{ fontWeight: 'bold', color: COLOR.text }}>{row.name || row.username}</div>
+        <div style={{ fontSize: '11px', color: COLOR.textMuted }}>{row.username}</div>
       </td>
-      <td style={{ ...S.td, color: '#ccc' }}>{row.courseTitle}</td>
+      <td style={{ ...S.td, color: COLOR.textSubtle }}>{row.courseTitle}</td>
       <td style={S.td}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <div style={{ ...S.barBg, width: '80px', flexShrink: 0 }}>
-            <div style={{ ...S.barFill, width: `${percent}%`, backgroundColor: barColor }} />
+            <div style={{ ...S.barFill, width: `${percent}%`, backgroundColor: COLOR.mainGreen }} />
           </div>
-          <span style={{ fontSize: '12px', color: '#aaa', minWidth: '36px' }}>{percent}%</span>
+          <span style={{ fontSize: '12px', color: COLOR.textMuted, minWidth: '36px' }}>{percent}%</span>
         </div>
       </td>
-      <td style={{ ...S.td, color: '#ccc' }}>
+      <td style={{ ...S.td, color: COLOR.textSubtle }}>
         {row.quizScore !== null ? `${row.quizScore}点` : '—'}
       </td>
       <td style={{ ...S.td, textAlign: 'center', fontSize: '16px' }}>
@@ -331,28 +369,28 @@ function ProgressRow({ row }: { row: FlatRow }) {
 const S: Record<string, React.CSSProperties> = {
   container: {
     margin: '16px 0',
-    fontFamily: 'sans-serif',
-    color: '#e0e0e0',
+    fontFamily: COLOR.fontFamily,
+    color: COLOR.text,
   },
   heading: {
     fontSize: '20px',
     fontWeight: 'bold',
     margin: '0 0 20px',
-    color: '#f0f0f0',
+    color: COLOR.text,
   },
   sectionTitle: {
     fontSize: '15px',
     fontWeight: 'bold',
-    color: '#aaa',
+    color: COLOR.textSubtle,
     margin: '20px 0 10px',
     textTransform: 'uppercase',
     letterSpacing: '0.05em',
   },
   muted: {
-    color: '#888',
+    color: COLOR.textMuted,
   },
   error: {
-    color: '#ef4444',
+    color: COLOR.accentRed,
   },
   // コースサマリーカード
   cardGrid: {
@@ -364,16 +402,16 @@ const S: Record<string, React.CSSProperties> = {
     flex: '1 1 200px',
     maxWidth: '280px',
     padding: '16px',
-    backgroundColor: '#1e1e2e',
-    border: '1px solid #333',
-    borderTop: '3px solid #22c55e', // borderTopColor はインラインで上書き
+    backgroundColor: COLOR.white,
+    border: `1px solid ${COLOR.border}`,
+    borderTop: `3px solid ${COLOR.mainGreen}`, // borderTopColor はインラインで上書き
     borderRadius: '8px',
   },
   summaryTitle: {
     margin: '0 0 12px',
     fontSize: '14px',
     fontWeight: 'bold',
-    color: '#e0e0e0',
+    color: COLOR.text,
   },
   summaryRow: {
     display: 'flex',
@@ -382,10 +420,10 @@ const S: Record<string, React.CSSProperties> = {
     fontSize: '13px',
   },
   summaryLabel: {
-    color: '#888',
+    color: COLOR.textMuted,
   },
   summaryValue: {
-    color: '#ccc',
+    color: COLOR.text,
   },
   // CSVボタン
   csvRow: {
@@ -393,22 +431,25 @@ const S: Record<string, React.CSSProperties> = {
   },
   csvButton: {
     padding: '8px 20px',
-    backgroundColor: '#2563eb',
-    color: '#fff',
+    backgroundColor: COLOR.mainGreen,
+    color: COLOR.white,
     border: 'none',
     borderRadius: '6px',
     fontSize: '13px',
     fontWeight: 'bold',
     cursor: 'pointer',
+    fontFamily: COLOR.fontFamily,
+    transition: 'background-color 0.2s ease',
   },
   csvButtonSmall: {
     padding: '4px 12px',
-    backgroundColor: '#374151',
-    color: '#ccc',
-    border: '1px solid #555',
+    backgroundColor: COLOR.mainGreen,
+    color: COLOR.white,
+    border: 'none',
     borderRadius: '4px',
     fontSize: '12px',
     cursor: 'pointer',
+    fontFamily: COLOR.fontFamily,
   },
   // テーブル
   tableWrapper: {
@@ -418,27 +459,30 @@ const S: Record<string, React.CSSProperties> = {
     width: '100%',
     borderCollapse: 'collapse',
     fontSize: '13px',
+    backgroundColor: COLOR.tableBg,
   },
   th: {
     padding: '10px 12px',
-    backgroundColor: '#12121e',
-    color: '#ccc',
+    backgroundColor: COLOR.tableHeaderBg,
+    color: COLOR.text,
     fontWeight: 'bold',
     textAlign: 'left',
-    borderBottom: '2px solid #333',
+    borderBottom: `2px solid ${COLOR.border}`,
     whiteSpace: 'nowrap',
+    transition: 'color 0.15s ease',
   },
   tr: {
-    borderBottom: '1px solid #2a2a3e',
+    borderBottom: `1px solid ${COLOR.border}`,
   },
   td: {
     padding: '10px 12px',
     verticalAlign: 'middle',
+    color: COLOR.text,
   },
   // 進捗バー
   barBg: {
     height: '6px',
-    backgroundColor: '#333',
+    backgroundColor: COLOR.barBg,
     borderRadius: '3px',
     overflow: 'hidden',
   },

@@ -11,6 +11,21 @@ const COURSE_PATH_MAP: Record<string, string> = {
   intro: '/07_e-ラーニング/入門編',
 };
 
+// カラーパレット定数（復職名人Webサイトに合わせる）
+const COLOR = {
+  mainGreen: '#1a661e',
+  mainGreenLight: 'rgba(33, 128, 38, 0.05)',
+  accentRed: '#e44141',
+  accentBlue: '#1176d4',
+  text: '#333',
+  textMuted: '#888',
+  border: 'hsla(0,0%,78%,.5)',
+  white: '#fff',
+  bg: '#faf5f0',
+  barBg: '#e0e0e0',
+  fontFamily: '"Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif',
+};
+
 interface DashboardProps {
   userId: string;
 }
@@ -50,8 +65,10 @@ export function Dashboard({ userId }: DashboardProps) {
 
 function CourseCard({ course }: { course: CourseDashboardItem }) {
   const percent = Math.round(course.progressPercent);
-  const barColor = percent >= 100 ? '#22c55e' : '#3b82f6';
   const growiPath = COURSE_PATH_MAP[course.courseId];
+
+  // 進捗バーは常にメイン緑で統一
+  const barColor = COLOR.mainGreen;
 
   return (
     <div style={S.card}>
@@ -75,7 +92,7 @@ function CourseCard({ course }: { course: CourseDashboardItem }) {
       {course.quiz && course.quiz.attempted && (
         <div style={{
           ...S.quizResult,
-          color: course.quiz.passed ? '#22c55e' : '#f97316',
+          color: course.quiz.passed ? COLOR.mainGreen : COLOR.accentRed,
         }}>
           クイズ: {course.quiz.passed ? '合格' : '不合格'}
           {course.quiz.score !== null && ` (${course.quiz.score}点)`}
@@ -100,12 +117,14 @@ function CourseCard({ course }: { course: CourseDashboardItem }) {
 const S: Record<string, React.CSSProperties> = {
   container: {
     margin: '16px 0',
+    fontFamily: COLOR.fontFamily,
+    color: COLOR.text,
   },
   muted: {
-    color: '#888',
+    color: COLOR.textMuted,
   },
   error: {
-    color: '#ef4444',
+    color: COLOR.accentRed,
   },
   grid: {
     display: 'flex',
@@ -117,9 +136,10 @@ const S: Record<string, React.CSSProperties> = {
     flex: '1 1 280px',
     maxWidth: '400px',
     padding: '20px',
-    border: '1px solid #333',
+    border: `1px solid ${COLOR.border}`,
     borderRadius: '8px',
-    backgroundColor: '#1e1e2e',
+    backgroundColor: COLOR.white,
+    fontFamily: COLOR.fontFamily,
   },
   badge: {
     position: 'absolute',
@@ -127,24 +147,25 @@ const S: Record<string, React.CSSProperties> = {
     right: '12px',
     padding: '2px 10px',
     borderRadius: '12px',
-    backgroundColor: '#22c55e',
-    color: '#fff',
+    backgroundColor: COLOR.mainGreen,
+    color: COLOR.white,
     fontSize: '12px',
     fontWeight: 'bold',
   },
   cardTitle: {
     margin: '0 0 12px',
     fontSize: '16px',
-    color: '#e0e0e0',
+    color: COLOR.text,
+    fontWeight: 700,
   },
   progressLabel: {
     fontSize: '13px',
-    color: '#aaa',
+    color: COLOR.textMuted,
     marginBottom: '4px',
   },
   barBg: {
     height: '8px',
-    backgroundColor: '#333',
+    backgroundColor: COLOR.barBg,
     borderRadius: '4px',
     overflow: 'hidden',
   },
@@ -155,7 +176,7 @@ const S: Record<string, React.CSSProperties> = {
   },
   percent: {
     fontSize: '12px',
-    color: '#888',
+    color: COLOR.textMuted,
     textAlign: 'right',
     marginTop: '2px',
   },
@@ -166,13 +187,13 @@ const S: Record<string, React.CSSProperties> = {
   },
   completedAt: {
     fontSize: '12px',
-    color: '#888',
+    color: COLOR.textMuted,
     marginTop: '4px',
   },
   link: {
     display: 'inline-block',
     marginTop: '12px',
-    color: '#60a5fa',
+    color: COLOR.accentBlue,
     textDecoration: 'none',
     fontSize: '13px',
   },

@@ -14,6 +14,23 @@ interface Props {
 
 type Status = 'loading' | 'incomplete' | 'submitting' | 'completed' | 'undoing' | 'error';
 
+// カラーパレット定数（復職名人Webサイトに合わせる）
+const COLOR = {
+  mainGreen: '#1a661e',
+  mainGreenDark: '#145218',
+  mainGreenLight: 'rgba(33, 128, 38, 0.05)',
+  mainGreenBorder: 'rgba(33, 128, 38, 0.3)',
+  gray: '#6b7280',
+  textMuted: '#888',
+  errorRed: '#e44141',
+  errorRedBg: '#fff2f0',
+  border: 'hsla(0,0%,78%,.5)',
+  white: '#fff',
+  bg: '#faf5f0',
+  text: '#333',
+  fontFamily: '"Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif',
+};
+
 export function LessonCompleteButton({ courseId, pagePath, userId }: Props) {
   const [status, setStatus] = useState<Status>('loading');
   const [errorMessage, setErrorMessage] = useState<string>('');
@@ -83,7 +100,8 @@ export function LessonCompleteButton({ courseId, pagePath, userId }: Props) {
     marginTop: '2rem',
     marginBottom: '1rem',
     padding: '1.5rem',
-    borderTop: '1px solid rgba(255, 255, 255, 0.12)',
+    borderTop: `1px solid ${COLOR.border}`,
+    fontFamily: COLOR.fontFamily,
   };
 
   const baseButtonStyle: React.CSSProperties = {
@@ -98,32 +116,34 @@ export function LessonCompleteButton({ courseId, pagePath, userId }: Props) {
     cursor: 'pointer',
     transition: 'background-color 0.2s ease, opacity 0.2s ease',
     lineHeight: 1.5,
+    fontFamily: COLOR.fontFamily,
   };
 
   const incompleteButtonStyle: React.CSSProperties = {
     ...baseButtonStyle,
-    backgroundColor: '#3b82f6', // blue-500
-    color: '#ffffff',
+    backgroundColor: COLOR.mainGreen,
+    color: COLOR.white,
   };
 
   const completedButtonStyle: React.CSSProperties = {
     ...baseButtonStyle,
-    backgroundColor: '#22c55e', // green-500
-    color: '#ffffff',
+    backgroundColor: COLOR.mainGreenLight,
+    color: COLOR.mainGreen,
+    border: `1px solid ${COLOR.mainGreenBorder}`,
     cursor: 'pointer', // クリックで取消可能なためpointerを維持
   };
 
   const submittingButtonStyle: React.CSSProperties = {
     ...baseButtonStyle,
-    backgroundColor: '#6b7280', // gray-500
-    color: '#ffffff',
+    backgroundColor: COLOR.gray,
+    color: COLOR.white,
     cursor: 'not-allowed',
     opacity: 0.7,
   };
 
   const errorStyle: React.CSSProperties = {
     marginTop: '0.5rem',
-    color: '#f87171', // red-400
+    color: COLOR.errorRed,
     fontSize: '0.875rem',
   };
 
@@ -147,11 +167,11 @@ export function LessonCompleteButton({ courseId, pagePath, userId }: Props) {
           style={completedButtonStyle}
           onClick={handleUndo}
           onMouseEnter={(e) => {
-            // ホバー時に取消を示す色（緑→やや暗い緑）に変化させる
-            (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#16a34a';
+            // ホバー時に取消を示す色に変化させる
+            (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'rgba(33, 128, 38, 0.1)';
           }}
           onMouseLeave={(e) => {
-            (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#22c55e';
+            (e.currentTarget as HTMLButtonElement).style.backgroundColor = COLOR.mainGreenLight;
           }}
           title="クリックで完了を取り消す"
         >
@@ -191,10 +211,10 @@ export function LessonCompleteButton({ courseId, pagePath, userId }: Props) {
         style={incompleteButtonStyle}
         onClick={handleClick}
         onMouseEnter={(e) => {
-          (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#2563eb';
+          (e.currentTarget as HTMLButtonElement).style.backgroundColor = COLOR.mainGreenDark;
         }}
         onMouseLeave={(e) => {
-          (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#3b82f6';
+          (e.currentTarget as HTMLButtonElement).style.backgroundColor = COLOR.mainGreen;
         }}
       >
         <SquareIcon />
