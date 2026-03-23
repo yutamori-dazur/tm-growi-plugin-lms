@@ -190,18 +190,25 @@ const activate = (): void => {
   });
   observer.observe(document.body, { childList: true, subtree: true });
 
-  // SPA戻る/進むでGrowiがキャッシュDOMを復元したとき、
-  // data-lms-mounted が付いたままだがReact rootが失われている。
-  // popstate で全マウントをリセットして再マウントする。
-  window.addEventListener('popstate', () => {
-    setTimeout(() => {
-      // 既存のマウント済みマークをクリアして再スキャン
-      document.querySelectorAll('[data-lms-mounted]').forEach((el) => {
+  // Growi SPA ナビゲーション（戻る/進む含む）でキャッシュDOMが復元されると、
+  // data-lms-mounted が付いたままだがReact rootが失われることがある。
+  // 定期チェックで、マウント済みなのに中身が空のプレースホルダーを検知して再マウントする。
+  setInterval(() => {
+    const mounted = document.querySelectorAll('[data-lms-mounted]');
+    let needsRemount = false;
+    for (const el of mounted) {
+      // React rootがマウントされていれば子要素がある。空なら再マウントが必要。
+      if (el.childNodes.length === 0) {
         el.removeAttribute('data-lms-mounted');
-      });
+        needsRemount = true;
+      }
+    }
+    // マウント済みマークがなくて未マウントのプレースホルダーがあるか
+    const unmounted = document.querySelectorAll('[data-lms-type]:not([data-lms-mounted])');
+    if (needsRemount || unmounted.length > 0) {
       mountLmsComponents();
-    }, 500);
-  });
+    }
+  }, 1000);
 };
 
 const deactivate = (): void => {
