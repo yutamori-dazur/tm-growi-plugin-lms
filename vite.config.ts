@@ -1,17 +1,14 @@
-import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import { defineConfig } from 'vite';
 
+// Growi v7 スクリプト型プラグインの標準ビルド設定
+// manifest.json + assets/ 形式で出力する（ライブラリモードではない）
 export default defineConfig({
   plugins: [react()],
   build: {
-    lib: {
-      entry: 'client-entry.tsx',
-      formats: ['cjs'],
-      fileName: () => 'index.js',
-    },
+    manifest: true,
     rollupOptions: {
-      external: ['react', 'react-dom'],
+      input: ['/client-entry.tsx'],
     },
-    outDir: 'dist',
   },
 });
