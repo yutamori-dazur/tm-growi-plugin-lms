@@ -8,7 +8,7 @@
  */
 
 import { useState } from 'react';
-import { submitQuiz, QuizSubmitResponse } from './api';
+import { submitQuiz, QuizSubmitResponse, QuizAnswerResult } from './api';
 import { QuizData } from './yamlParser';
 
 interface QuizRendererProps {
@@ -146,6 +146,30 @@ const S = {
     border: '1px solid rgba(239, 68, 68, 0.3)',
     color: '#f87171',
     fontSize: '0.875rem',
+  },
+  answerDetail: {
+    fontSize: '0.875rem',
+    lineHeight: 1.6,
+    marginTop: '0.35rem',
+    color: 'inherit',
+    opacity: 0.85,
+  },
+  correctAnswerText: {
+    fontSize: '0.875rem',
+    lineHeight: 1.6,
+    marginTop: '0.25rem',
+    color: '#4ade80', // green-400 — 正解を視覚的に強調する
+  },
+  explanationBox: {
+    marginTop: '0.75rem',
+    padding: '0.6rem 0.85rem',
+    borderRadius: '6px',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderLeft: '3px solid rgba(156, 163, 175, 0.5)',
+    fontSize: '0.875rem',
+    lineHeight: 1.6,
+    color: 'inherit',
+    opacity: 0.9,
   },
 } satisfies Record<string, React.CSSProperties>;
 
@@ -359,8 +383,25 @@ export function QuizRenderer({ quizData }: QuizRendererProps) {
 
       {/* 各問の正誤フィードバック */}
       {questions.map((q, qIdx) => {
-        const answerResult = result.answers.find((a) => a.questionIndex === qIdx);
+        const answerResult: QuizAnswerResult | undefined = result.answers.find(
+          (a) => a.questionIndex === qIdx,
+        );
         const isCorrect = answerResult?.correct ?? false;
+
+        // 受講者が選択した選択肢テキストを生成する
+        const selectedTexts = (answerResult?.selected ?? [])
+          .map((i) => q.options[i])
+          .filter(Boolean)
+          .join('、');
+
+        // 正解の選択肢テキストを生成する（APIが返す場合のみ表示）
+        const correctTexts =
+          answerResult?.correctAnswer != null
+            ? answerResult.correctAnswer
+                .map((i) => q.options[i])
+                .filter(Boolean)
+                .join('、')
+            : null;
 
         // isCorrect に依存するため render 内で算出する
         const feedbackBlockStyle: React.CSSProperties = {
@@ -375,7 +416,7 @@ export function QuizRenderer({ quizData }: QuizRendererProps) {
           fontSize: '0.875rem',
           fontWeight: 600,
           color: isCorrect ? '#4ade80' : '#f87171',
-          marginBottom: '0.5rem',
+          marginBottom: '0.4rem',
         };
 
         return (
@@ -386,6 +427,20 @@ export function QuizRenderer({ quizData }: QuizRendererProps) {
               {isCorrect ? <CheckIcon /> : <CrossIcon />}
               {isCorrect ? '正解' : '不正解'}
             </div>
+            {/* 受講者の回答を表示する */}
+            {selectedTexts && (
+              <div style={S.answerDetail}>あなたの回答: {selectedTexts}</div>
+            )}
+            {/* 不正解かつAPIが正解を返した場合のみ正解を表示する */}
+            {!isCorrect && correctTexts && (
+              <div style={S.correctAnswerText}>正解: {correctTexts}</div>
+            )}
+            {/* 解説テキストがある場合に表示する */}
+            {answerResult?.explanation && (
+              <div style={S.explanationBox}>
+                <strong>[解説]</strong> {answerResult.explanation}
+              </div>
+            )}
           </div>
         );
       })}

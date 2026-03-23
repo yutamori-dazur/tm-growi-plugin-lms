@@ -60,6 +60,24 @@ export async function getCurrentUserId(): Promise<string | null> {
 }
 
 /**
+ * レッスン完了を取り消す。
+ * 完了済みレッスンを未完了状態に戻す。
+ */
+export async function undoLessonComplete(
+  courseId: string,
+  pagePath: string,
+): Promise<{ success: boolean }> {
+  const res = await fetch(`${API_BASE}/lessons/complete`, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ courseId, pagePath }),
+  });
+  if (!res.ok) throw new Error(`API error ${res.status}: ${await res.text()}`);
+  return res.json();
+}
+
+/**
  * レッスン完了を記録する。
  * 既に完了済みの場合も success: true を返す（API側でupsert）。
  */
@@ -105,6 +123,8 @@ export interface QuizAnswerResult {
   questionIndex: number;
   selected: number[];
   correct: boolean;
+  correctAnswer?: number[];    // 正解の選択肢インデックス（旧APIでは含まれない場合がある）
+  explanation?: string | null; // 解説テキスト（旧APIでは含まれない場合がある）
 }
 
 export interface QuizSubmitResponse {

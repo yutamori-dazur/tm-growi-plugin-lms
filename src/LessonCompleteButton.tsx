@@ -4,7 +4,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { completeLesson, getLessonStatus } from './api';
+import { completeLesson, getLessonStatus, undoLessonComplete } from './api';
 
 interface Props {
   courseId: string;
@@ -12,7 +12,7 @@ interface Props {
   userId: string;
 }
 
-type Status = 'loading' | 'incomplete' | 'submitting' | 'completed' | 'error';
+type Status = 'loading' | 'incomplete' | 'submitting' | 'completed' | 'undoing' | 'error';
 
 export function LessonCompleteButton({ courseId, pagePath, userId }: Props) {
   const [status, setStatus] = useState<Status>('loading');
@@ -59,6 +59,21 @@ export function LessonCompleteButton({ courseId, pagePath, userId }: Props) {
     }
   };
 
+  // 完了取消ハンドラー: 誤クリック救済のため確認ダイアログなしで即座に取消す
+  const handleUndo = async () => {
+    setStatus('undoing');
+    setErrorMessage('');
+    try {
+      await undoLessonComplete(courseId, pagePath);
+      setStatus('incomplete');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : '不明なエラーが発生しました';
+      setErrorMessage(message);
+      // 取消失敗時は completed に戻す（データは変わっていないため）
+      setStatus('completed');
+    }
+  };
+
   // ---- スタイル定義（Tailwind不可のためinline styleを使用）----
 
   const containerStyle: React.CSSProperties = {
@@ -95,8 +110,7 @@ export function LessonCompleteButton({ courseId, pagePath, userId }: Props) {
     ...baseButtonStyle,
     backgroundColor: '#22c55e', // green-500
     color: '#ffffff',
-    cursor: 'default',
-    opacity: 0.85,
+    cursor: 'pointer', // クリックで取消可能なためpointerを維持
   };
 
   const submittingButtonStyle: React.CSSProperties = {
@@ -128,10 +142,32 @@ export function LessonCompleteButton({ courseId, pagePath, userId }: Props) {
 
   if (status === 'completed') {
     return (
-      <div style={containerStyle}>
-        <button style={completedButtonStyle} disabled>
+      <div style={{ ...containerStyle, flexDirection: 'column' }}>
+        <button
+          style={completedButtonStyle}
+          onClick={handleUndo}
+          onMouseEnter={(e) => {
+            // ホバー時に取消を示す色（緑→やや暗い緑）に変化させる
+            (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#16a34a';
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#22c55e';
+          }}
+          title="クリックで完了を取り消す"
+        >
           <CheckIcon />
-          完了済み
+          完了済み（クリックで取消）
+        </button>
+      </div>
+    );
+  }
+
+  if (status === 'undoing') {
+    return (
+      <div style={containerStyle}>
+        <button style={submittingButtonStyle} disabled>
+          <Spinner />
+          取消中...
         </button>
       </div>
     );

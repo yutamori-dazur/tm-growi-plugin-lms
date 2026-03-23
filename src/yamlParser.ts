@@ -77,6 +77,7 @@ export function parseQuizYaml(yamlText: string, courseId: string): QuizData | nu
     let title = 'クイズ';
     let passingScore = 80;
     let parsedCourseId: string | null = null;
+    let parsedQuizId: string | null = null;
     const rawQuestions: Array<{
       type: string;
       text: string;
@@ -110,6 +111,10 @@ export function parseQuizYaml(yamlText: string, courseId: string): QuizData | nu
         i++;
       } else if (trimmed.startsWith('courseId:')) {
         parsedCourseId = stripQuotes(trimmed.slice('courseId:'.length).trim());
+        i++;
+      } else if (trimmed.startsWith('quizId:')) {
+        // YAML内でquizIdを明示指定できるようにする（レッスン単位のクイズ対応）
+        parsedQuizId = stripQuotes(trimmed.slice('quizId:'.length).trim());
         i++;
       } else if (trimmed.startsWith('passingScore:')) {
         const val = parseInt(trimmed.slice('passingScore:'.length).trim(), 10);
@@ -215,9 +220,13 @@ export function parseQuizYaml(yamlText: string, courseId: string): QuizData | nu
     // YAML内のcourseIdがあればそちらを優先、なければ引数のcourseIdを使う
     const finalCourseId = parsedCourseId ?? courseId;
 
+    // quizIdはYAML内で明示指定 > 自動生成の優先順位で決定する
+    // 明示指定によりレッスン単位のクイズ（intro-lesson01-quiz等）に対応できる
+    const finalQuizId = parsedQuizId ?? `${finalCourseId}-quiz-01`;
+
     return {
       title,
-      quizId: `${finalCourseId}-quiz-01`,
+      quizId: finalQuizId,
       courseId: finalCourseId,
       passingScore,
       questions,
