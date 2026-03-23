@@ -76,6 +76,7 @@ export function parseQuizYaml(yamlText: string, courseId: string): QuizData | nu
     const lines = yamlText.split('\n');
     let title = 'クイズ';
     let passingScore = 80;
+    let parsedCourseId: string | null = null;
     const rawQuestions: Array<{
       type: string;
       text: string;
@@ -106,6 +107,9 @@ export function parseQuizYaml(yamlText: string, courseId: string): QuizData | nu
 
       if (trimmed.startsWith('title:')) {
         title = stripQuotes(trimmed.slice('title:'.length).trim());
+        i++;
+      } else if (trimmed.startsWith('courseId:')) {
+        parsedCourseId = stripQuotes(trimmed.slice('courseId:'.length).trim());
         i++;
       } else if (trimmed.startsWith('passingScore:')) {
         const val = parseInt(trimmed.slice('passingScore:'.length).trim(), 10);
@@ -208,10 +212,13 @@ export function parseQuizYaml(yamlText: string, courseId: string): QuizData | nu
 
     if (questions.length === 0) return null;
 
+    // YAML内のcourseIdがあればそちらを優先、なければ引数のcourseIdを使う
+    const finalCourseId = parsedCourseId ?? courseId;
+
     return {
       title,
-      quizId: `${courseId}-quiz-01`,
-      courseId,
+      quizId: `${finalCourseId}-quiz-01`,
+      courseId: finalCourseId,
       passingScore,
       questions,
     };
