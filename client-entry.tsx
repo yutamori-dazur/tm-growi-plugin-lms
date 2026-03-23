@@ -87,12 +87,11 @@ function mountLmsComponents(): void {
     mountedRoots.set(el, root);
 
     if (type === 'lesson-complete') {
-      if (!parsed.courseId || !currentUserId) continue;
-      const pagePath = decodeURIComponent(window.location.pathname);
+      if (!parsed.courseId || !parsed.pagePath || !currentUserId) continue;
       root.render(
         React.createElement(LessonCompleteButton, {
           courseId: parsed.courseId,
-          pagePath,
+          pagePath: parsed.pagePath,
           userId: currentUserId,
         }),
       );
