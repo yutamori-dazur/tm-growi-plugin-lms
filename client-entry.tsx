@@ -12,6 +12,7 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 
 import config from './package.json';
+import { AdminDashboard } from './src/AdminDashboard';
 import { Dashboard } from './src/Dashboard';
 import { LessonCompleteButton } from './src/LessonCompleteButton';
 import { ProgressIndicator } from './src/ProgressIndicator';
@@ -36,13 +37,19 @@ function withLmsPlaceholders(OriginalCode: React.ComponentType<any>) {
     const { className, children } = props;
     const lang = (className ?? '').replace('language-', '');
 
-    if (lang === 'lms:lesson-complete' || lang === 'lms:progress' || lang === 'lms:dashboard') {
+    if (
+      lang === 'lms:lesson-complete' ||
+      lang === 'lms:progress' ||
+      lang === 'lms:dashboard' ||
+      lang === 'lms:admin-dashboard'
+    ) {
       const text = typeof children === 'string' ? children : String(children ?? '');
       // data属性付きの空divを返す（Stage 2で検知してマウント）
       const typeMap: Record<string, string> = {
         'lms:lesson-complete': 'lesson-complete',
         'lms:progress': 'progress',
         'lms:dashboard': 'dashboard',
+        'lms:admin-dashboard': 'admin-dashboard',
       };
       return React.createElement('div', {
         'data-lms-type': typeMap[lang] ?? lang,
@@ -116,6 +123,9 @@ function mountLmsComponents(): void {
       const quizData = parseQuizYaml(propsText, parsed.courseId ?? 'unknown');
       if (!quizData) continue;
       root.render(React.createElement(QuizRenderer, { quizData }));
+    } else if (type === 'admin-dashboard') {
+      // 管理者ダッシュボード（ユーザーIDは不要。API側で認証・権限確認を行う）
+      root.render(React.createElement(AdminDashboard));
     }
   }
 }

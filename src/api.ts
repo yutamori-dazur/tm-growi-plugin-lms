@@ -160,6 +160,71 @@ export async function getDashboardData(userId: string): Promise<DashboardRespons
   return res.json();
 }
 
+// ---- 管理者用型定義 ----
+
+export interface UserCourseProgress {
+  courseId: string;
+  completedLessons: number;
+  totalLessons: number;
+  progressPercent: number;
+  quizScore: number | null;
+  quizPassed: boolean | null;
+  completed: boolean;
+  completedAt: string | null;
+}
+
+export interface UserProgress {
+  userId: string;
+  username: string;
+  name: string;
+  email: string;
+  courses: UserCourseProgress[];
+}
+
+export interface CourseOverview {
+  courseId: string;
+  title: string;
+  totalEnrolled: number;
+  totalCompleted: number;
+  completionRate: number;
+  averageQuizScore: number | null;
+}
+
+export interface AdminOverviewResponse {
+  totalUsers: number;
+  courses: CourseOverview[];
+  users: UserProgress[];
+}
+
+// ---- 管理者用API関数 ----
+
+/**
+ * 管理者ダッシュボード用の全体概要データを取得する。
+ * 管理者権限がない場合は403エラーが返る。
+ */
+export async function getAdminOverview(): Promise<AdminOverviewResponse> {
+  const res = await fetch(`${API_BASE}/admin/overview`, { credentials: 'include' });
+  if (!res.ok) throw new Error(`API error ${res.status}: ${await res.text()}`);
+  return res.json();
+}
+
+/**
+ * 受講者進捗データをCSVとしてダウンロードする。
+ * courseId を指定するとそのコースのみを出力する。
+ */
+export async function downloadCsv(courseId?: string): Promise<void> {
+  const params = courseId ? `?courseId=${encodeURIComponent(courseId)}` : '';
+  const res = await fetch(`${API_BASE}/admin/export/csv${params}`, { credentials: 'include' });
+  if (!res.ok) throw new Error(`API error ${res.status}`);
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `lms-report${courseId ? '-' + courseId : ''}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 export async function submitQuiz(
   quizId: string,
   courseId: string,
