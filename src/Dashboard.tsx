@@ -8,7 +8,7 @@ import { getDashboardData } from './api';
 
 /** コースIDからGrowiページパスへのマッピング */
 const COURSE_PATH_MAP: Record<string, string> = {
-  intro: '/07_e-ラーニング/入門編',
+  intro: '/07_e-ラーニング/ビギナークラス',
 };
 
 // カラーパレット定数（復職名人Webサイトに合わせる）
@@ -70,8 +70,8 @@ function CourseCard({ course }: { course: CourseDashboardItem }) {
   // 進捗バーは常にメイン緑で統一
   const barColor = COLOR.mainGreen;
 
-  return (
-    <div style={S.card}>
+  const cardContent = (
+    <>
       {/* 修了バッジ */}
       {course.completed && (
         <div style={S.badge}>修了</div>
@@ -105,13 +105,18 @@ function CourseCard({ course }: { course: CourseDashboardItem }) {
           修了日: {new Date(course.completedAt).toLocaleDateString('ja-JP')}
         </div>
       )}
-
-      {/* リンク */}
-      {growiPath && (
-        <a href={growiPath} style={S.link}>コースページへ →</a>
-      )}
-    </div>
+    </>
   );
+
+  // カード全体をクリック可能にする
+  if (growiPath) {
+    return (
+      <a href={growiPath} style={S.cardLink}>
+        <div style={S.card}>{cardContent}</div>
+      </a>
+    );
+  }
+  return <div style={S.card}>{cardContent}</div>;
 }
 
 const S: Record<string, React.CSSProperties> = {
@@ -131,15 +136,22 @@ const S: Record<string, React.CSSProperties> = {
     flexWrap: 'wrap',
     gap: '16px',
   },
-  card: {
-    position: 'relative',
+  cardLink: {
+    textDecoration: 'none',
+    color: 'inherit',
     flex: '1 1 280px',
     maxWidth: '400px',
+    display: 'block',
+    transition: 'transform 0.15s, box-shadow 0.15s',
+  } as React.CSSProperties,
+  card: {
+    position: 'relative',
     padding: '20px',
     border: `1px solid ${COLOR.border}`,
     borderRadius: '8px',
     backgroundColor: COLOR.white,
     fontFamily: COLOR.fontFamily,
+    cursor: 'pointer',
   },
   badge: {
     position: 'absolute',
@@ -189,12 +201,5 @@ const S: Record<string, React.CSSProperties> = {
     fontSize: '12px',
     color: COLOR.textMuted,
     marginTop: '4px',
-  },
-  link: {
-    display: 'inline-block',
-    marginTop: '12px',
-    color: COLOR.accentBlue,
-    textDecoration: 'none',
-    fontSize: '13px',
   },
 };
