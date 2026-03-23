@@ -12,6 +12,7 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 
 import config from './package.json';
+import { Dashboard } from './src/Dashboard';
 import { LessonCompleteButton } from './src/LessonCompleteButton';
 import { ProgressIndicator } from './src/ProgressIndicator';
 import { QuizRenderer } from './src/QuizRenderer';
@@ -35,11 +36,16 @@ function withLmsPlaceholders(OriginalCode: React.ComponentType<any>) {
     const { className, children } = props;
     const lang = (className ?? '').replace('language-', '');
 
-    if (lang === 'lms:lesson-complete' || lang === 'lms:progress') {
+    if (lang === 'lms:lesson-complete' || lang === 'lms:progress' || lang === 'lms:dashboard') {
       const text = typeof children === 'string' ? children : String(children ?? '');
       // data属性付きの空divを返す（Stage 2で検知してマウント）
+      const typeMap: Record<string, string> = {
+        'lms:lesson-complete': 'lesson-complete',
+        'lms:progress': 'progress',
+        'lms:dashboard': 'dashboard',
+      };
       return React.createElement('div', {
-        'data-lms-type': lang === 'lms:lesson-complete' ? 'lesson-complete' : 'progress',
+        'data-lms-type': typeMap[lang] ?? lang,
         'data-lms-props': text.trim(),
         style: { minHeight: '48px' },
       });
@@ -103,6 +109,9 @@ function mountLmsComponents(): void {
           userId: currentUserId,
         }),
       );
+    } else if (type === 'dashboard') {
+      if (!currentUserId) continue;
+      root.render(React.createElement(Dashboard, { userId: currentUserId }));
     } else if (type === 'quiz') {
       const quizData = parseQuizYaml(propsText, parsed.courseId ?? 'unknown');
       if (!quizData) continue;

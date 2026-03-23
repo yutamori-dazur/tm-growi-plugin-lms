@@ -122,6 +122,44 @@ export interface QuizSubmitResponse {
  * クイズ回答を送信して採点結果を取得する。
  * 採点はサーバーサイドで行うため、正解データはフロントエンドに返さない。
  */
+// ---- ダッシュボード関連型定義 ----
+
+export interface QuizProgressSummary {
+  attempted: boolean;
+  score: number | null;
+  passed: boolean | null;
+}
+
+export interface CourseDashboardItem {
+  courseId: string;
+  title: string;
+  totalLessons: number;
+  completedLessons: number;
+  progressPercent: number;
+  quiz: QuizProgressSummary | null;
+  completed: boolean;
+  completedAt: string | null;
+}
+
+export interface DashboardResponse {
+  userId: string;
+  courses: CourseDashboardItem[];
+}
+
+/**
+ * ダッシュボード用データを取得する。
+ */
+export async function getDashboardData(userId: string): Promise<DashboardResponse> {
+  const res = await fetch(`${API_BASE}/dashboard/${encodeURIComponent(userId)}`, {
+    credentials: 'include',
+  });
+  if (!res.ok) {
+    const detail = await res.text();
+    throw new Error(`API error ${res.status}: ${detail}`);
+  }
+  return res.json();
+}
+
 export async function submitQuiz(
   quizId: string,
   courseId: string,
