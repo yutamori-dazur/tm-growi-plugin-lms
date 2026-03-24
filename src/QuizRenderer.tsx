@@ -53,6 +53,9 @@ const S = {
     color: COLOR.text,
     maxWidth: '100%',
     boxSizing: 'border-box' as const,
+    whiteSpace: 'normal' as const,
+    overflowWrap: 'break-word' as const,
+    wordBreak: 'break-word' as const,
   },
   title: {
     fontSize: '1.25rem',

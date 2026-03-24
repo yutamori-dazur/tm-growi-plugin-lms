@@ -122,6 +122,16 @@ function mountLmsComponents(): void {
     } else if (type === 'quiz') {
       const quizData = parseQuizYaml(propsText, parsed.courseId ?? 'unknown');
       if (!quizData) continue;
+      // 親の <pre> タグが white-space: pre / overflow-x: auto を持つため
+      // クイズ内のテキストが折り返されずはみ出す。親要素のスタイルを上書きする。
+      const parentPre = el.closest('pre');
+      if (parentPre) {
+        (parentPre as HTMLElement).style.whiteSpace = 'normal';
+        (parentPre as HTMLElement).style.overflow = 'visible';
+        (parentPre as HTMLElement).style.padding = '0';
+        (parentPre as HTMLElement).style.background = 'none';
+        (parentPre as HTMLElement).style.border = 'none';
+      }
       root.render(React.createElement(QuizRenderer, { quizData }));
     } else if (type === 'admin-dashboard') {
       // 管理者ダッシュボード（ユーザーIDは不要。API側で認証・権限確認を行う）
