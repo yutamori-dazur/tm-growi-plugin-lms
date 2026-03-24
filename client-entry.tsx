@@ -156,6 +156,22 @@ async function fetchUserId(): Promise<string | null> {
 }
 
 // ──────────────────────────────────────────
+// AIチャットウィジェット注入
+// ──────────────────────────────────────────
+
+/** 復職名人AIアドバイザーのフローティングウィジェットを読み込む（1回のみ） */
+function injectChatWidget(): void {
+  if (document.querySelector('script[data-takao-widget]')) return;
+  const s = document.createElement('script');
+  s.src = 'https://chat.fukushoku-meijin.com/widget.js';
+  s.defer = true;
+  s.setAttribute('data-profile', 'member');
+  s.setAttribute('data-color', '#1a661e');
+  s.setAttribute('data-takao-widget', '1');
+  document.body.appendChild(s);
+}
+
+// ──────────────────────────────────────────
 // エントリーポイント
 // ──────────────────────────────────────────
 
@@ -163,6 +179,9 @@ const activate = (): void => {
   if (growiFacade == null || growiFacade.markdownRenderer == null) {
     return;
   }
+
+  // AIチャットウィジェットを注入する（認証済みユーザーにのみ表示）
+  injectChatWidget();
 
   // ユーザーID取得（非同期、完了後にマウント再試行）
   fetchUserId().then((id) => {
