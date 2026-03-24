@@ -52,7 +52,6 @@ const S = {
     fontFamily: COLOR.fontFamily,
     color: COLOR.text,
     maxWidth: '100%',
-    overflow: 'hidden',
     boxSizing: 'border-box' as const,
   },
   title: {
@@ -68,7 +67,6 @@ const S = {
     borderRadius: '8px',
     backgroundColor: COLOR.white,
     maxWidth: '100%',
-    overflow: 'hidden',
     boxSizing: 'border-box' as const,
   },
   questionLabel: {
