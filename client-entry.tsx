@@ -165,7 +165,7 @@ function injectChatWidget(): void {
   const s = document.createElement('script');
   s.src = 'https://chat.fukushoku-meijin.com/widget.js';
   s.defer = true;
-  s.setAttribute('data-profile', 'member');
+  s.setAttribute('data-profile', 'widget');
   s.setAttribute('data-color', '#1a661e');
   s.setAttribute('data-takao-widget', '1');
   document.body.appendChild(s);
