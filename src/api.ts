@@ -258,12 +258,12 @@ export interface QuestionSubmitResponse {
  * 質問箱に質問を投稿する。
  * 管理者のみ閲覧可能なGrowiページとして作成される。
  */
-export async function submitQuestion(question: string): Promise<QuestionSubmitResponse> {
+export async function submitQuestion(title: string, question: string): Promise<QuestionSubmitResponse> {
   const res = await fetch(`${API_BASE}/question-box/submit`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
-    body: JSON.stringify({ question }),
+    body: JSON.stringify({ title, question }),
   });
   if (!res.ok) {
     const detail = await res.text();

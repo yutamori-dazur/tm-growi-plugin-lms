@@ -24,19 +24,21 @@ const COLOR = {
 };
 
 export function QuestionBox() {
+  const [title, setTitle] = useState('');
   const [question, setQuestion] = useState('');
   const [status, setStatus] = useState<Status>('idle');
   const [errorMessage, setErrorMessage] = useState('');
 
-  const canSubmit = status === 'idle' && question.trim().length > 0;
+  const canSubmit = status === 'idle' && title.trim().length > 0 && question.trim().length > 0;
 
   async function handleSubmit() {
     if (!canSubmit) return;
     setStatus('submitting');
     setErrorMessage('');
     try {
-      await submitQuestion(question.trim());
+      await submitQuestion(title.trim(), question.trim());
       setStatus('success');
+      setTitle('');
       setQuestion('');
     } catch (e: any) {
       setStatus('error');
@@ -120,8 +122,31 @@ export function QuestionBox() {
     );
   }
 
+  const inputStyle: React.CSSProperties = {
+    width: '100%',
+    padding: '10px 12px',
+    border: `1px solid ${COLOR.border}`,
+    borderRadius: '6px',
+    fontFamily: COLOR.fontFamily,
+    fontSize: '14px',
+    color: COLOR.text,
+    boxSizing: 'border-box',
+    outline: 'none',
+  };
+
   return (
     <div style={containerStyle}>
+      <div style={{ marginBottom: '12px' }}>
+        <input
+          type="text"
+          style={inputStyle}
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="タイトル"
+          disabled={status === 'submitting'}
+          maxLength={100}
+        />
+      </div>
       <div style={{ marginBottom: '16px' }}>
         <textarea
           style={textareaStyle}
