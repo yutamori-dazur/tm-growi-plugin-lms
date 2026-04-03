@@ -17,6 +17,7 @@ import { Dashboard } from './src/Dashboard';
 import { LessonCompleteButton } from './src/LessonCompleteButton';
 import { ProgressIndicator } from './src/ProgressIndicator';
 import { QuizRenderer } from './src/QuizRenderer';
+import { QuestionBox } from './src/QuestionBox';
 import { parseQuizYaml } from './src/yamlParser';
 
 /** activate時に取得したユーザーID */
@@ -41,7 +42,8 @@ function withLmsPlaceholders(OriginalCode: React.ComponentType<any>) {
       lang === 'lms:lesson-complete' ||
       lang === 'lms:progress' ||
       lang === 'lms:dashboard' ||
-      lang === 'lms:admin-dashboard'
+      lang === 'lms:admin-dashboard' ||
+      lang === 'lms:question-box'
     ) {
       const text = typeof children === 'string' ? children : String(children ?? '');
       // data属性付きの空divを返す（Stage 2で検知してマウント）
@@ -50,6 +52,7 @@ function withLmsPlaceholders(OriginalCode: React.ComponentType<any>) {
         'lms:progress': 'progress',
         'lms:dashboard': 'dashboard',
         'lms:admin-dashboard': 'admin-dashboard',
+        'lms:question-box': 'question-box',
       };
       return React.createElement('div', {
         'data-lms-type': typeMap[lang] ?? lang,
@@ -136,6 +139,9 @@ function mountLmsComponents(): void {
     } else if (type === 'admin-dashboard') {
       // 管理者ダッシュボード（ユーザーIDは不要。API側で認証・権限確認を行う）
       root.render(React.createElement(AdminDashboard));
+    } else if (type === 'question-box') {
+      // 質問箱（認証不要。ログイン済みユーザーのみがページにアクセスできる）
+      root.render(React.createElement(QuestionBox));
     }
   }
 }

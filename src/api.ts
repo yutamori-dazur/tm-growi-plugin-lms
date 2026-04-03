@@ -245,6 +245,33 @@ export async function downloadCsv(courseId?: string): Promise<void> {
   URL.revokeObjectURL(url);
 }
 
+// ---- 質問箱関連型定義 ----
+
+export interface QuestionSubmitResponse {
+  success: boolean;
+  message: string;
+}
+
+// ---- 質問箱API関数 ----
+
+/**
+ * 質問箱に質問を投稿する。
+ * 管理者のみ閲覧可能なGrowiページとして作成される。
+ */
+export async function submitQuestion(question: string): Promise<QuestionSubmitResponse> {
+  const res = await fetch(`${API_BASE}/question-box/submit`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ question }),
+  });
+  if (!res.ok) {
+    const detail = await res.text();
+    throw new Error(`API error ${res.status}: ${detail}`);
+  }
+  return res.json();
+}
+
 export async function submitQuiz(
   quizId: string,
   courseId: string,
