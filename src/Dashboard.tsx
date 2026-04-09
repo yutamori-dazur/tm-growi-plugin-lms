@@ -9,6 +9,7 @@ import { getDashboardData } from './api';
 /** コースIDからGrowiページパスへのマッピング */
 const COURSE_PATH_MAP: Record<string, string> = {
   intro: '/07_e-ラーニング/ビギナークラス',
+  'forms-mastery': '/07_e-ラーニング/手順と様式習得コース',
 };
 
 // カラーパレット定数（復職名人Webサイトに合わせる）
@@ -116,7 +117,7 @@ function CourseCard({ course }: { course: CourseDashboardItem }) {
       </a>
     );
   }
-  return <div style={S.card}>{cardContent}</div>;
+  return <div style={{ ...S.cardWrapper, ...S.card }}>{cardContent}</div>;
 }
 
 const S: Record<string, React.CSSProperties> = {
@@ -135,6 +136,10 @@ const S: Record<string, React.CSSProperties> = {
     display: 'flex',
     flexWrap: 'wrap',
     gap: '16px',
+  },
+  cardWrapper: {
+    flex: '1 1 280px',
+    maxWidth: '400px',
   },
   cardLink: {
     textDecoration: 'none',
