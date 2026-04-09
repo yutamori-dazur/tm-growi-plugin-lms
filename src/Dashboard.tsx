@@ -71,12 +71,28 @@ function CourseCard({ course }: { course: CourseDashboardItem }) {
   // 進捗バーは常にメイン緑で統一
   const barColor = COLOR.mainGreen;
 
+  // ステータス判定: 修了 > 受講中 > 未受講
+  const status = course.completed
+    ? 'completed'
+    : course.completedLessons > 0
+      ? 'in-progress'
+      : 'not-started';
+
+  const badgeStyle = {
+    completed: { backgroundColor: COLOR.mainGreen, color: COLOR.white },
+    'in-progress': { backgroundColor: '#e88a1a', color: COLOR.white },
+    'not-started': { backgroundColor: COLOR.barBg, color: COLOR.textMuted },
+  }[status];
+
+  const badgeLabel = {
+    completed: '修了',
+    'in-progress': '受講中',
+    'not-started': '未受講',
+  }[status];
+
   const cardContent = (
     <>
-      {/* 修了バッジ */}
-      {course.completed && (
-        <div style={S.badge}>修了</div>
-      )}
+      <div style={{ ...S.badge, ...badgeStyle }}>{badgeLabel}</div>
 
       <h3 style={S.cardTitle}>{course.title}</h3>
 
