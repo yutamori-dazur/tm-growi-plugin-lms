@@ -117,7 +117,7 @@ function CourseCard({ course }: { course: CourseDashboardItem }) {
       </a>
     );
   }
-  return <div style={{ ...S.cardWrapper, ...S.card }}>{cardContent}</div>;
+  return <div style={S.card}>{cardContent}</div>;
 }
 
 const S: Record<string, React.CSSProperties> = {
@@ -133,21 +133,14 @@ const S: Record<string, React.CSSProperties> = {
     color: COLOR.accentRed,
   },
   grid: {
-    display: 'flex',
-    flexWrap: 'wrap',
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
     gap: '16px',
-  },
-  cardWrapper: {
-    flex: '1 1 280px',
-    maxWidth: '400px',
   },
   cardLink: {
     textDecoration: 'none',
     color: 'inherit',
-    flex: '1 1 280px',
-    maxWidth: '400px',
     display: 'block',
-    transition: 'transform 0.15s, box-shadow 0.15s',
   } as React.CSSProperties,
   card: {
     position: 'relative',
