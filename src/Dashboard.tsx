@@ -135,6 +135,7 @@ const S: Record<string, React.CSSProperties> = {
   grid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+    maxWidth: '900px',
     gap: '16px',
   },
   cardLink: {
